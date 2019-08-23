@@ -29,7 +29,7 @@ static AVCodec *video_codec;
 static AVCodecParameters *codec_parametres;
 static AVCodecContext *codec_context;
 static AVFormatContext *out_format_context;
-static AVFrame *frame, *temp_frame;;
+static AVFrame *frame, *temp_frame;
 static AVPacket *packet;
 static AVStream *output_stream;
 static struct SwsContext *sws_context;
@@ -40,7 +40,7 @@ static int
         frame_lock = 0,
         stride = 0,
         translate = 0;
-static long
+static int
         timer_trigger = 0;
 static pthread_t
         translation_thread;
@@ -59,9 +59,8 @@ int ffmpeg_init_translation(int src_width, int src_height, int fps, int image_st
                      char *outfile, void(*frame_request_callback)(void)) {
     //char *outfile = "/home/vok/1.webm";
     const AVRational dst_fps = {fps, 1};
+    const AVRational dst_fps_output = {15, 1};
 
-
-    //outfile = "test.mp4";
     request_callback = frame_request_callback;
     stride = image_stride;
     timer_trigger = 1000 / fps;
@@ -91,18 +90,18 @@ int ffmpeg_init_translation(int src_width, int src_height, int fps, int image_st
     codec_parametres = output_stream->codecpar;
     codec_parametres->codec_tag = 0;
     codec_parametres->format = 0;
-    codec_parametres->bit_rate = 256e3;
+    codec_parametres->bit_rate = 512e3;
     codec_parametres->width = dst_width;
     codec_parametres->height = dst_height;
     codec_context = avcodec_alloc_context3(video_codec);
     codec_context = output_stream->codec;
     codec_context->width = dst_width;
     codec_context->height = dst_height;
-    codec_context->bit_rate = 256e3;
+    codec_context->bit_rate = 512e3;
     codec_context->framerate = dst_fps;
     codec_context->pix_fmt = video_codec->pix_fmts[0];
-    codec_context->time_base = output_stream->time_base = av_inv_q(dst_fps);
-    output_stream->r_frame_rate = output_stream->avg_frame_rate = dst_fps;
+    codec_context->time_base = output_stream->time_base = av_inv_q(dst_fps_output);
+    output_stream->r_frame_rate = output_stream->avg_frame_rate = dst_fps_output;
     if (out_format_context->oformat->flags & AVFMT_GLOBALHEADER) {
         codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }

@@ -67,7 +67,9 @@ int main(int argc, char *argv[])
         if(!a) a = _capture.open(0);
         if(!a)
             return -1;
+        cv::waitKey(1000);
         bool b = _capture.read(_mat);
+        cv::waitKey(1000);
         _size = _mat.cols * _mat.rows * _mat.elemSize1() * _mat.channels();
 
         ffmpeg_prepare_server();
