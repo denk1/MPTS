@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     printf("*** Input 's' and press enter for server operations, 'c' for client. ***\n\n");
     _type = getchar();
     if(_type == 's') {
-
+        std::vector<uchar> buff, buff_pack;
         cv::Mat _mat;
         cv::VideoCapture _capture;
         int a;
@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
         _data[_size + 6] = 0x7F;
         _data[_size + 7] = 0x80;
 
+
         if(create_server(20894, &parsed_data) < 0)
              return -1;
          start_server();
@@ -94,13 +95,26 @@ int main(int argc, char *argv[])
 
          while (1) {
             _capture.read(_mat);
+            imencode(".jpg", _mat, buff);
+            buff_pack.resize(5);
+            memcpy(&buff_pack[0], &_data[0], 5);
+            buff_pack.insert(buff_pack.begin() + 5, buff.begin(), buff.end());
+            size_t size_buff_pack = buff_pack.size() - 5;
+            buff_pack[1] = ((size_buff_pack >> 0x18) & 0xFF);
+            buff_pack[2] = ((size_buff_pack >> 0x10) & 0xFF);
+            buff_pack[3] = ((size_buff_pack >> 0x08) & 0xFF);
+            buff_pack[4] = (size_buff_pack & 0xFF);
+            //buff_pack.push_back(0x7F);
+            //buff_pack.push_back(0x80);
             //if(_mat.rows)
             //    cv::imshow("ORIGINAL", _mat);
-            memcpy(&_data[5], _mat.data, _size);
+            memcpy(&_data[5], _mat.data, (size_t)_size);
+
             for(int _i = 0; _i < _size; _i++)
                 _data[_size + 5] ^= _data[_i + 5];
             if(send_flag) {
-                server_write(_data, _size + 8);
+                //server_write(_data, _size + 8);
+                server_write(&buff_pack[0], buff_pack.size());
                 send_flag = 0;
             }
             if(encode_flag && _mat.rows) {
@@ -112,6 +126,7 @@ int main(int argc, char *argv[])
                 printf("Disconnecting.\n");
                 break;
             }
+            buff_pack.erase(buff_pack.begin(), buff_pack.end());
             //usleep(33333);
              /*_ch = getchar();
              if(_ch == 'q') {
